@@ -7,5 +7,8 @@ target_sources(Queijo.Lib PRIVATE
 )
 
 target_sources(Queijo.CLI PRIVATE
+    cli/FileUtils.h
+    cli/FileUtils.cpp
+
     cli/queijo.cpp
 )
