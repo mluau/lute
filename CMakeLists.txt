@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(Queijo LANGUAGES CXX C)
-add_subdirectory(luau)
-add_subdirectory(libuv)
+add_subdirectory(extern/luau)
+add_subdirectory(extern/libuv)
 
 add_library(Queijo.Fs STATIC)
 add_library(Queijo.Net STATIC)
@@ -10,7 +10,7 @@ add_library(Queijo.Task STATIC)
 add_executable(Queijo.CLI)
 set_target_properties(Queijo.CLI PROPERTIES OUTPUT_NAME queijo)
 
-set(LIBUV_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libuv/include)
+set(LIBUV_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/extern/libuv/include)
 
 include(Sources.cmake)
 
@@ -21,8 +21,8 @@ target_include_directories(Queijo.Fs PUBLIC Fs/include ${LIBUV_INCLUDE_DIR})
 target_include_directories(Queijo.Net PUBLIC Net/include ${LIBUV_INCLUDE_DIR})
 target_include_directories(Queijo.Task PUBLIC Task/include ${LIBUV_INCLUDE_DIR})
 
-target_link_libraries(Queijo.Fs PRIVATE Luau.VM)
-target_link_libraries(Queijo.Net PRIVATE Luau.VM)
+target_link_libraries(Queijo.Fs PRIVATE Luau.VM uv)
+target_link_libraries(Queijo.Net PRIVATE Luau.VM uv)
 target_link_libraries(Queijo.Task PRIVATE Luau.VM uv)
 target_link_libraries(Queijo.CLI PRIVATE Luau.Compiler Luau.Config Luau.CodeGen Luau.VM Queijo.Fs Queijo.Net Queijo.Task)
 
