@@ -8,6 +8,10 @@
 
 #include "FileUtils.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 static bool codegen = false;
 static int program_argc = 0;
 char** program_argv = nullptr;
