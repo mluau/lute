@@ -1,8 +1,8 @@
 [submodule "luau"]
-	path = luau
+	path = extern/luau
 	url = git@github.com:luau-lang/luau.git
 [submodule "libuv"]
-	path = libuv
+	path = extern/libuv
 	url = git@github.com:libuv/libuv.git
 [submodule "curl"]
 	path = curl
