@@ -4,20 +4,34 @@ project(Queijo LANGUAGES CXX C)
 add_subdirectory(luau)
 add_subdirectory(libuv)
 
+# curl setup
+set(USE_LIBIDN2 OFF)
+set(USE_NGHTTP2 OFF)
+set(CURL_USE_LIBPSL OFF)
+set(CURL_USE_LIBSSH2 OFF)
+set(CURL_ZLIB OFF)
+set(BUILD_EXAMPLES OFF)
+set(BUILD_CURL_EXE OFF)
+set(BUILD_SHARED_LIBS OFF)
+set(BUILD_STATIC_LIBS ON)
+
+add_subdirectory(curl)
+
+set(CURL_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/curl/include)
+#
+
 add_library(Queijo.Lib STATIC)
 add_executable(Queijo.CLI)
 set_target_properties(Queijo.CLI PROPERTIES OUTPUT_NAME queijo)
 
-set(LIBUV_INCLUDE_DIR ${PROJECT_SOURCE_DIR/libuv/include})
-
-message(libuv_include_dir="${LIBUV_INCLUDE_DIR}")
+set(LIBUV_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libuv/include)
 
 include(Sources.cmake)
 
 target_compile_features(Queijo.Lib PUBLIC cxx_std_17)
-target_include_directories(Queijo.Lib PUBLIC Lib/include ${LIBUV_INCLUDE_DIR})
-target_link_libraries(Queijo.Lib PRIVATE Luau.VM uv)
-target_link_libraries(Queijo.CLI PRIVATE Luau.Compiler Luau.Config Luau.CodeGen Luau.VM Queijo.Lib uv)
+target_include_directories(Queijo.Lib PUBLIC Lib/include ${LIBUV_INCLUDE_DIR} ${CURL_INCLUDE_DIR})
+target_link_libraries(Queijo.Lib PRIVATE Luau.VM uv libcurl)
+target_link_libraries(Queijo.CLI PRIVATE Luau.Compiler Luau.Config Luau.CodeGen Luau.VM Queijo.Lib)
 
 target_compile_options(Queijo.Lib PRIVATE ${QUEIJO_OPTIONS})
 target_compile_options(Queijo.CLI PRIVATE ${QUEIJO_OPTIONS})
