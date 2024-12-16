@@ -4,6 +4,6 @@
 [submodule "libuv"]
 	path = extern/libuv
 	url = git@github.com:libuv/libuv.git
-[submodule "curl"]
-	path = curl
-	url = https://github.com/curl/curl.git
+[submodule "extern/curl"]
+	path = extern/curl
+	url = git@github.com:curl/curl.git
