@@ -16,6 +16,7 @@ include(Sources.cmake)
 
 target_compile_features(Queijo.Lib PUBLIC cxx_std_17)
 target_include_directories(Queijo.Lib PUBLIC Lib/include ${LIBUV_INCLUDE_DIR})
+target_link_libraries(Queijo.Lib PRIVATE Luau.VM uv)
 target_link_libraries(Queijo.CLI PRIVATE Luau.Compiler Luau.Config Luau.CodeGen Luau.VM Queijo.Lib uv)
 
 target_compile_options(Queijo.Lib PRIVATE ${QUEIJO_OPTIONS})

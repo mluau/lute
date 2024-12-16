@@ -27,20 +27,29 @@ static Luau::CompileOptions copts()
     return result;
 }
 
+void load_queijo_runtime(lua_State* L, const luaL_Reg* libs)
+{
+    const luaL_Reg* lib = libs;
+    for (; lib->func; lib++)
+    {
+        lua_pushcfunction(L, lib->func, NULL);
+        lua_pushstring(L, lib->name);
+        lua_call(L, 1, 0);
+    }
+}
+
 void setupState(lua_State* L)
 {
-    if (codegen)
-        Luau::CodeGen::create(L);
-
+    /* register new libraries */
+    Luau::CodeGen::create(L);
+    // register the builtin tables
     luaL_openlibs(L);
 
     static const luaL_Reg funcs[] = {
         {NULL, NULL},
     };
 
-    lua_pushvalue(L, LUA_GLOBALSINDEX);
-    luaL_register(L, NULL, funcs);
-    lua_pop(L, 1);
+    load_queijo_runtime(L, funcs);
 
     luaL_sandbox(L);
 }
@@ -167,7 +176,7 @@ int main(int argc, char** argv)
 
     if (files.empty())
     {
-        fprintf(stderr, "Error: quiejo expects a file to run.\n\n");
+        fprintf(stderr, "Error: queijo expects a file to run.\n\n");
         displayHelp(argv[0]);
         return 1;
     }
