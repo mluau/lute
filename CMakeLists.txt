@@ -4,6 +4,10 @@ project(Queijo LANGUAGES CXX C)
 add_subdirectory(luau)
 add_subdirectory(libuv)
 
+add_library(Queijo.Fs STATIC)
+add_library(Queijo.Net STATIC)
+add_library(Queijo.Task STATIC)
+
 # curl setup
 set(USE_LIBIDN2 OFF)
 set(USE_NGHTTP2 OFF)
@@ -20,7 +24,6 @@ add_subdirectory(curl)
 set(CURL_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/curl/include)
 #
 
-add_library(Queijo.Lib STATIC)
 add_executable(Queijo.CLI)
 set_target_properties(Queijo.CLI PROPERTIES OUTPUT_NAME queijo)
 
@@ -28,12 +31,21 @@ set(LIBUV_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libuv/include)
 
 include(Sources.cmake)
 
-target_compile_features(Queijo.Lib PUBLIC cxx_std_17)
-target_include_directories(Queijo.Lib PUBLIC Lib/include ${LIBUV_INCLUDE_DIR} ${CURL_INCLUDE_DIR})
-target_link_libraries(Queijo.Lib PRIVATE Luau.VM uv libcurl)
-target_link_libraries(Queijo.CLI PRIVATE Luau.Compiler Luau.Config Luau.CodeGen Luau.VM Queijo.Lib)
+target_compile_features(Queijo.Fs PUBLIC cxx_std_17)
+target_compile_features(Queijo.Net PUBLIC cxx_std_17)
+target_compile_features(Queijo.Task PUBLIC cxx_std_17)
+target_include_directories(Queijo.Fs PUBLIC Fs/include ${LIBUV_INCLUDE_DIR})
+target_include_directories(Queijo.Net PUBLIC Net/include ${LIBUV_INCLUDE_DIR} ${CURL_INCLUDE_DIR})
+target_include_directories(Queijo.Task PUBLIC Task/include ${LIBUV_INCLUDE_DIR})
 
-target_compile_options(Queijo.Lib PRIVATE ${QUEIJO_OPTIONS})
+target_link_libraries(Queijo.Fs PRIVATE Luau.VM)
+target_link_libraries(Queijo.Net PRIVATE Luau.VM libcurl)
+target_link_libraries(Queijo.Task PRIVATE Luau.VM uv)
+target_link_libraries(Queijo.CLI PRIVATE Luau.Compiler Luau.Config Luau.CodeGen Luau.VM Queijo.Fs Queijo.Net Queijo.Task)
+
+target_compile_options(Queijo.Fs PRIVATE ${QUEIJO_OPTIONS})
+target_compile_options(Queijo.Net PRIVATE ${QUEIJO_OPTIONS})
+target_compile_options(Queijo.Task PRIVATE ${QUEIJO_OPTIONS})
 target_compile_options(Queijo.CLI PRIVATE ${QUEIJO_OPTIONS})
 
 set(QUEIJO_OPTIONS)
