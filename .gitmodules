@@ -1,3 +1,6 @@
 [submodule "luau"]
 	path = luau
 	url = git@github.com:luau-lang/luau.git
+[submodule "libuv"]
+	path = libuv
+	url = git@github.com:libuv/libuv.git
