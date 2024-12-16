@@ -1,9 +1,19 @@
-target_sources(Queijo.Lib PRIVATE
-    lib/include/queijo/io.h
-    lib/include/queijo/net.h
+target_sources(Queijo.Fs PRIVATE
+    fs/include/queijo/fs.h
 
-    lib/src/io.cpp
-    lib/src/net.cpp
+    fs/src/fs.cpp
+)
+
+target_sources(Queijo.Net PRIVATE
+    net/include/queijo/net.h
+
+    net/src/net.cpp
+)
+
+target_sources(Queijo.Task PRIVATE
+    task/include/queijo/task.h
+
+    task/src/task.cpp
 )
 
 target_sources(Queijo.CLI PRIVATE
