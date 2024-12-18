@@ -8,7 +8,6 @@
 #include "lualib.h"
 
 #include <string>
-#include <thread>
 #include <utility>
 #include <vector>
 
@@ -71,8 +70,8 @@ static int getAsync(lua_State* L)
     auto ref = getRefForThread(L);
     Runtime* runtime = getRuntime(L);
 
-    // TODO: switch to libuv, add cancellations
-    std::thread thread = std::thread([=] {
+    // TODO: add cancellations
+    runtime->runInWorkQueue([=] {
         auto [error, data] = requestData(url);
 
         if (!error.empty())
@@ -87,8 +86,6 @@ static int getAsync(lua_State* L)
             });
         }
     });
-
-    thread.detach();
 
     return lua_yield(L, 0);
 }
