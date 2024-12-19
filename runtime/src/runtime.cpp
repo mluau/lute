@@ -1,13 +1,152 @@
 #include "queijo/runtime.h"
 
+#include "lua.h"
+
 #include "uv.h"
 
 #include <assert.h>
+
+static void lua_close_checked(lua_State* L)
+{
+    if (L)
+        lua_close(L);
+}
+
+Runtime::Runtime()
+    : globalState(nullptr, lua_close_checked)
+    , dataCopy(nullptr, lua_close_checked)
+{
+    stop.store(false);
+}
+
+Runtime::~Runtime()
+{
+    {
+        std::unique_lock lock(continuationMutex);
+
+        stop.store(true);
+
+        runLoopCv.notify_one();
+    }
+
+    if (runLoopThread.joinable())
+        runLoopThread.join();
+}
+
+bool Runtime::runToCompletion()
+{
+    // While there is some C++ or Luau code left to run
+    while (!runningThreads.empty() || hasContinuations())
+    {
+        uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+
+        // Complete all C++ continuations
+        std::vector<std::function<void()>> copy;
+
+        {
+            std::unique_lock lock(continuationMutex);
+            copy = std::move(continuations);
+            continuations.clear();
+        }
+
+        for (auto&& continuation : copy)
+            continuation();
+
+        if (runningThreads.empty())
+            continue;
+
+        auto next = std::move(runningThreads.front());
+        runningThreads.erase(runningThreads.begin());
+
+        next.ref->push(GL);
+        lua_State* L = lua_tothread(GL, -1);
+
+        if (L == nullptr)
+        {
+            fprintf(stderr, "Cannot resume a non-thread reference");
+            return false;
+        }
+
+        // We still have 'next' on stack to hold on to thread we are about to run
+        lua_pop(GL, 1);
+
+        int status = LUA_OK;
+
+        if (!next.success)
+            status = lua_resumeerror(L, nullptr);
+        else
+            status = lua_resume(L, nullptr, next.argumentCount);
+
+        if (status == LUA_YIELD)
+        {
+            int results = lua_gettop(L);
+
+            if (results != 0)
+            {
+                std::string error = "Top level yield cannot return any results";
+                error += "\nstacktrace:\n";
+                error += lua_debugtrace(L);
+                fprintf(stderr, "%s", error.c_str());
+                return false;
+            }
+
+            continue;
+        }
+
+        if (status != LUA_OK)
+        {
+            std::string error;
+
+            if (const char* str = lua_tostring(L, -1))
+                error = str;
+
+            error += "\nstacktrace:\n";
+            error += lua_debugtrace(L);
+
+            fprintf(stderr, "%s", error.c_str());
+            return false;
+        }
+
+        if (next.cont)
+            next.cont();
+    }
+
+    return true;
+}
+
+void Runtime::runContinuously()
+{
+    // TODO: another place for libuv
+    runLoopThread = std::thread([this] {
+        while (!stop)
+        {
+            // Block to wait on event
+            {
+                std::unique_lock lock(continuationMutex);
+
+                runLoopCv.wait(lock, [this] {
+                    return !continuations.empty() || stop;
+                    });
+            }
+
+            runToCompletion();
+        }
+    });
+}
 
 bool Runtime::hasContinuations()
 {
     std::unique_lock lock(continuationMutex);
     return !continuations.empty();
+}
+
+void Runtime::schedule(std::function<void()> f)
+{
+    std::unique_lock lock(continuationMutex);
+
+    continuations.push_back(std::move(f));
+
+    runLoopCv.notify_one();
 }
 
 void Runtime::scheduleLuauError(std::shared_ptr<Ref> ref, std::string error)
@@ -22,6 +161,8 @@ void Runtime::scheduleLuauError(std::shared_ptr<Ref> ref, std::string error)
         lua_pushlstring(L, error.data(), error.size());
         runningThreads.push_back({ false, ref, lua_gettop(L) });
     });
+
+    runLoopCv.notify_one();
 }
 
 void Runtime::scheduleLuauResume(std::shared_ptr<Ref> ref, std::function<int(lua_State*)> cont)
@@ -36,6 +177,8 @@ void Runtime::scheduleLuauResume(std::shared_ptr<Ref> ref, std::function<int(lua
         int results = cont(L);
         runningThreads.push_back({ true, ref, results });
     });
+
+    runLoopCv.notify_one();
 }
 
 void Runtime::runInWorkQueue(std::function<void()> f)
