@@ -69,9 +69,14 @@ struct AstSerialize : public Luau::AstVisitor
 {
     lua_State* L;
 
+    // absolute index for the table where we're storing locals
+    int localTableIndex;
+
     AstSerialize(lua_State* L)
         : L(L)
     {
+        lua_createtable(L, 0, 0);
+        localTableIndex = lua_absindex(L, -1);
     }
 
     void serialize(Luau::Position position)
@@ -96,12 +101,39 @@ struct AstSerialize : public Luau::AstVisitor
         lua_setfield(L, -2, "end");
     }
 
-    void serialize(Luau::AstName name)
+    void serialize(Luau::AstName& name)
     {
-        lua_createtable(L, 0, 1);
-
         lua_pushstring(L, name.value);
-        lua_setfield(L, -2, "value");
+    }
+
+    void serialize(Luau::AstLocal* local)
+    {
+        lua_pushlightuserdata(L, local);
+        lua_gettable(L, localTableIndex);
+
+        if (lua_isnil(L, -1))
+        {
+            lua_pop(L, 1);
+            lua_createtable(L, 0, 3);
+
+            // set up reference for this local into the local table
+            lua_pushlightuserdata(L, local);
+            lua_pushvalue(L, -2);
+            lua_settable(L, localTableIndex);
+
+            serialize(local->name);
+            lua_setfield(L, -2, "name");
+
+            if (local->shadow)
+                serialize(local->shadow);
+            else
+                lua_pushnil(L);
+            lua_setfield(L, -2, "shadows");
+
+            // TODO: types
+            lua_pushnil(L);
+            lua_setfield(L, -2, "annotation");
+        }
     }
 
     void serialize(Luau::AstExprTable::Item& item)
@@ -202,6 +234,17 @@ struct AstSerialize : public Luau::AstVisitor
         withLocation(node->location);
     }
 
+    void serializeLocals(Luau::AstArray<Luau::AstLocal*>& locals, size_t nrec = 0)
+    {
+        lua_createtable(L, locals.size, nrec);
+
+        for (size_t i = 0; i < locals.size; i++)
+        {
+            serialize(locals.data[i]);
+            lua_rawseti(L, -2, i + 1);
+        }
+    }
+
     void serializeExprs(Luau::AstArray<Luau::AstExpr*>& exprs, size_t nrec = 0)
     {
         lua_createtable(L, exprs.size, nrec);
@@ -231,7 +274,7 @@ struct AstSerialize : public Luau::AstVisitor
         serializeNodePreamble(node, "group");
 
         node->expr->visit(this);
-        lua_setfield(L, -2, "expr");
+        lua_setfield(L, -2, "expression");
     }
 
     void serialize(Luau::AstExprConstantNil* node)
@@ -277,8 +320,7 @@ struct AstSerialize : public Luau::AstVisitor
 
         serializeNodePreamble(node, "local");
 
-        // TODO: locals
-        lua_pushnil(L);
+        serialize(node->local);
         lua_setfield(L, -2, "local");
 
         lua_pushboolean(L, node->upvalue);
@@ -358,12 +400,15 @@ struct AstSerialize : public Luau::AstVisitor
 
         // TODO: attributes
 
-        // TODO: locals
-        lua_pushnil(L);
+        if (node->self)
+            serialize(node->self);
+        else
+            lua_pushnil(L);
         lua_setfield(L, -2, "self");
 
-        // TODO: locals
-        lua_createtable(L, 0, 0);
+        serializeLocals(node->args, node->argLocation ? 1 : 0);
+        if (node->argLocation)
+            withLocation(*node->argLocation);
         lua_setfield(L, -2, "parameters");
 
         // TODO: generics, return types, etc.
@@ -608,8 +653,7 @@ struct AstSerialize : public Luau::AstVisitor
 
         serializeNodePreamble(node, "local");
 
-        // TODO: locals
-        lua_pushnil(L);
+        serializeLocals(node->vars);
         lua_setfield(L, -2, "variables");
 
         serializeExprs(node->values);
@@ -628,8 +672,7 @@ struct AstSerialize : public Luau::AstVisitor
 
         serializeNodePreamble(node, "for");
 
-        // TODO: locals
-        lua_pushnil(L);
+        serialize(node->var);
         lua_setfield(L, -2, "variable");
 
         node->from->visit(this);
@@ -657,8 +700,7 @@ struct AstSerialize : public Luau::AstVisitor
 
         serializeNodePreamble(node, "forin");
 
-        // TODO: locals
-        lua_pushnil(L);
+        serializeLocals(node->vars);
         lua_setfield(L, -2, "variables");
 
         serializeExprs(node->values);
@@ -728,8 +770,7 @@ struct AstSerialize : public Luau::AstVisitor
 
         serializeNodePreamble(node, "localfunction");
 
-        // TODO: locals
-        lua_pushnil(L);
+        serialize(node->name);
         lua_setfield(L, -2, "name");
 
         node->func->visit(this);
@@ -959,105 +1000,122 @@ struct AstSerialize : public Luau::AstVisitor
 
     bool visit(Luau::AstStatBlock* node) override
     {
-        serializeStats(node->body);
+        serializeStat(node);
         return false;
     }
 
     bool visit(Luau::AstStatIf* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatWhile* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatRepeat* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatBreak* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatContinue* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatReturn* node) override
     {
-        serializeExprs(node->list);
-
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatExpr* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatLocal* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatFor* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatForIn* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatAssign* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatCompoundAssign* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatFunction* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatLocalFunction* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatTypeAlias* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatDeclareFunction* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatDeclareGlobal* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatDeclareClass* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstStatError* node) override
     {
-        return true;
+        serializeStat(node);
+        return false;
     }
 
     bool visit(Luau::AstType* node) override
