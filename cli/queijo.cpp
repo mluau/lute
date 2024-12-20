@@ -7,8 +7,9 @@
 #include "lua.h"
 #include "lualib.h"
 
-#include "queijo/net.h"
 #include "queijo/fs.h"
+#include "queijo/net.h"
+#include "queijo/luau.h"
 #include "queijo/ref.h"
 #include "queijo/runtime.h"
 
@@ -57,10 +58,13 @@ lua_State* setupState(Runtime& runtime)
     // register the builtin tables
     luaL_openlibs(L);
 
+    luaopen_fs(L);
+    lua_pop(L, 1);
+
     luaopen_net(L);
     lua_pop(L, 1);
 
-    luaopen_fs(L);
+    luaopen_luau(L);
     lua_pop(L, 1);
 
     static const luaL_Reg funcs[] = {
