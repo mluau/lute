@@ -246,7 +246,7 @@ struct AstSerialize : public Luau::AstVisitor
     void serializeNodePreamble(Luau::AstNode* node, const char* tag)
     {
         lua_rawcheckstack(L, 2);
-        
+
         lua_pushstring(L, tag);
         lua_setfield(L, -2, "tag");
 
@@ -1250,7 +1250,7 @@ struct AstSerialize : public Luau::AstVisitor
     }
 };
 
-static int luau_parse(lua_State* L)
+int luau_parse(lua_State* L)
 {
     std::string source = luaL_checkstring(L, 1);
 
@@ -1298,7 +1298,7 @@ static int luau_parse(lua_State* L)
     return 1;
 }
 
-static int luau_parseexpr(lua_State* L)
+int luau_parseexpr(lua_State* L)
 {
     std::string source = luaL_checkstring(L, 1);
 
@@ -1336,17 +1336,27 @@ static int luau_parseexpr(lua_State* L)
     return 1;
 }
 
-static const luaL_Reg lib[] = {
-    {"parse", luau_parse},
-    {"parseexpr", luau_parseexpr},
-    {nullptr, nullptr},
-};
-
 } // namespace luau
 
 int luaopen_luau(lua_State* L)
 {
     luaL_register(L, "luau", luau::lib);
+
+    return 1;
+}
+
+int lrtopen_luau(lua_State* L)
+{
+    lua_createtable(L, 0, std::size(luau::lib));
+
+    for (auto& [name, func] : luau::lib)
+    {
+        if (!name || !func)
+            break;
+
+        lua_pushcfunction(L, func, name);
+        lua_setfield(L, -2, name);
+    }
 
     return 1;
 }
