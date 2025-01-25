@@ -1,7 +1,6 @@
-#include "spawn.h"
+#include "queijo/spawn.h"
 
-#include "require.h"
-
+#include "queijo/require.h"
 #include "queijo/runtime.h"
 
 #include <memory>
@@ -157,6 +156,8 @@ static int crossVmMarshallCont(lua_State* L, int status)
     return 0;
 }
 
+namespace vm {
+
 int lua_spawn(lua_State* L)
 {
     const char* file = luaL_checkstring(L, 1);
@@ -238,3 +239,5 @@ int lua_spawn(lua_State* L)
 
     return 1;
 }
+
+} // namespace vm
