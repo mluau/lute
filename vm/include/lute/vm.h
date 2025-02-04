@@ -3,22 +3,21 @@
 #include "lua.h"
 #include "lualib.h"
 
-// open the library as a standard global luau library
-int luaopen_net(lua_State* L);
-// open the library as a table on top of the stack
-int lrtopen_net(lua_State* L);
+#include "lute/spawn.h"
 
-namespace net
+// open the library as a standard global luau library
+int luaopen_vm(lua_State* L);
+// open the library as a table on top of the stack
+int luteopen_vm(lua_State* L);
+
+namespace vm
 {
 
-int get(lua_State* L);
-
-int getAsync(lua_State* L);
+int lua_defer(lua_State* L);
 
 static const luaL_Reg lib[] = {
-    {"get", get},
-    {"getAsync", getAsync},
+    {"create", lua_spawn},
     {nullptr, nullptr},
 };
 
-} // namespace net
+} // namespace vm

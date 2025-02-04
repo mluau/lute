@@ -8,15 +8,15 @@
 #include "lualib.h"
 #include "uv.h"
 
-#include "queijo/fs.h"
-#include "queijo/luau.h"
-#include "queijo/net.h"
-#include "queijo/options.h"
-#include "queijo/ref.h"
-#include "queijo/require.h"
-#include "queijo/runtime.h"
-#include "queijo/task.h"
-#include "queijo/vm.h"
+#include "lute/fs.h"
+#include "lute/luau.h"
+#include "lute/net.h"
+#include "lute/options.h"
+#include "lute/ref.h"
+#include "lute/require.h"
+#include "lute/runtime.h"
+#include "lute/task.h"
+#include "lute/vm.h"
 
 #include "tc.h"
 
@@ -52,20 +52,20 @@ lua_State* setupState(Runtime& runtime)
 
     luaL_findtable(L, LUA_REGISTRYINDEX, "_MODULES", 1);
 
-    lrtopen_fs(L);
-    lua_setfield(L, -2, "@lrt/fs");
+    luteopen_fs(L);
+    lua_setfield(L, -2, "@lute/fs");
 
-    lrtopen_luau(L);
-    lua_setfield(L, -2, "@lrt/luau");
+    luteopen_luau(L);
+    lua_setfield(L, -2, "@lute/luau");
 
-    lrtopen_net(L);
-    lua_setfield(L, -2, "@lrt/net");
+    luteopen_net(L);
+    lua_setfield(L, -2, "@lute/net");
 
-    lrtopen_task(L);
-    lua_setfield(L, -2, "@lrt/task");
+    luteopen_task(L);
+    lua_setfield(L, -2, "@lute/task");
 
-    lrtopen_vm(L);
-    lua_setfield(L, -2, "@lrt/vm");
+    luteopen_vm(L);
+    lua_setfield(L, -2, "@lute/vm");
 
     static const luaL_Reg funcs[] = {
         {"require", lua_require},
@@ -211,7 +211,7 @@ int main(int argc, char** argv)
 
     if (files.empty())
     {
-        fprintf(stderr, "Error: queijo expects a file to run.\n\n");
+        fprintf(stderr, "Error: lute expects a file to run.\n\n");
         displayHelp(argv[0]);
         return 1;
     }

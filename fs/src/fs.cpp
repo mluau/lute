@@ -1,11 +1,11 @@
-#include "queijo/fs.h"
+#include "lute/fs.h"
 
 #include "lua.h"
 #include "lualib.h"
 #include "uv.h"
 
-#include "queijo/ref.h"
-#include "queijo/runtime.h"
+#include "lute/ref.h"
+#include "lute/runtime.h"
 
 #include <cstdio>
 #include <cstring>
@@ -455,7 +455,7 @@ int luaopen_fs(lua_State* L)
     return 1;
 }
 
-int lrtopen_fs(lua_State* L)
+int luteopen_fs(lua_State* L)
 {
     lua_createtable(L, 0, std::size(fs::lib));
 

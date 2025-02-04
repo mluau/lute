@@ -1,6 +1,6 @@
-#include "queijo/vm.h"
+#include "lute/vm.h"
 
-#include "queijo/runtime.h"
+#include "lute/runtime.h"
 
 int luaopen_vm(lua_State* L)
 {
@@ -9,7 +9,7 @@ int luaopen_vm(lua_State* L)
     return 1;
 }
 
-int lrtopen_vm(lua_State* L)
+int luteopen_vm(lua_State* L)
 {
     lua_createtable(L, 0, std::size(vm::lib));
 

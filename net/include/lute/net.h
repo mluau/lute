@@ -4,18 +4,21 @@
 #include "lualib.h"
 
 // open the library as a standard global luau library
-int luaopen_task(lua_State* L);
+int luaopen_net(lua_State* L);
 // open the library as a table on top of the stack
-int lrtopen_task(lua_State* L);
+int luteopen_net(lua_State* L);
 
-namespace task
+namespace net
 {
 
-int lua_defer(lua_State* L);
+int get(lua_State* L);
+
+int getAsync(lua_State* L);
 
 static const luaL_Reg lib[] = {
-    {"defer", lua_defer},
+    {"get", get},
+    {"getAsync", getAsync},
     {nullptr, nullptr},
 };
 
-} // namespace task
+} // namespace net
