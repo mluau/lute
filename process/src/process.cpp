@@ -374,6 +374,60 @@ int create(lua_State* L)
     return lua_yield(L, 0);
 }
 
+int homedir(lua_State* L)
+{
+    std::string buffer;
+
+    size_t homedir_size = 255;
+    buffer.reserve(homedir_size);
+
+    int status = uv_os_homedir(buffer.data(), &homedir_size);
+    if (status == UV_ENOBUFS)
+    {
+        // libuv gives us the new size if it's under sized
+        buffer.reserve(homedir_size);
+
+        status = uv_os_homedir(buffer.data(), &homedir_size);
+    }
+
+    if (status != 0)
+    {
+        luaL_error(L, "failed to get home directory");
+        return 1;
+    }
+
+    lua_pushstring(L, buffer.c_str());
+
+    return 1;
+}
+
+int cwd(lua_State* L)
+{
+    std::string buffer;
+
+    size_t cwd_size = 255;
+    buffer.reserve(cwd_size);
+
+    int status = uv_cwd(buffer.data(), &cwd_size);
+    if (status == UV_ENOBUFS)
+    {
+        // libuv gives us the new size if it's under sized
+        buffer.reserve(cwd_size);
+
+        status = uv_cwd(buffer.data(), &cwd_size);
+    }
+
+    if (status != 0)
+    {
+        luaL_error(L, "failed to get current working directory");
+        return 1;
+    }
+
+    lua_pushstring(L, buffer.c_str());
+
+    return 1;
+};
+
 static int envIndex(lua_State* L)
 {
     const char* key = luaL_checkstring(L, 2);
