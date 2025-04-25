@@ -138,6 +138,12 @@ export type AstExprTable = {
 	closeBrace: Token<"}">,
 }
 
+export type AstExprUnary = {
+	tag: "unary",
+	operator: Token<"not" | "-" | "#">,
+	operand: AstExpr,
+}
+
 export type AstExprBinary = {
 	tag: "binary",
 	lhsoperand: AstExpr,
@@ -158,6 +164,7 @@ export type AstExpr =
 	| AstExprIndexExpr
 	| AstExprAnonymousFunction
 	| AstExprTable
+	| AstExprUnary
 	| AstExprBinary
 
 export type AstStatBlock = {
