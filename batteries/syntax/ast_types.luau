@@ -74,6 +74,8 @@ export type AstExprGlobal = {
 	name: Token,
 }
 
+export type AstExprVarargs = Token<"..."> & { tag: "vararg" }
+
 export type AstExprCall = {
 	tag: "call",
 	func: AstExpr, -- TODO: stricter?
@@ -159,6 +161,7 @@ export type AstExpr =
 	| AstExprConstantString
 	| AstExprLocal
 	| AstExprGlobal
+	| AstExprVarargs
 	| AstExprCall
 	| AstExprIndexName
 	| AstExprIndexExpr
