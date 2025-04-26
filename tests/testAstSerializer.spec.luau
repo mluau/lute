@@ -129,7 +129,9 @@ local function test_roundtrippableAst()
 		"examples/parsing.luau",
 		"examples/time_example.luau",
 		"examples/writeFile.luau",
+		"tests/astSerializerTests/break-continue-1.luau",
 		"tests/astSerializerTests/while-1.luau",
+		"tests/astSerializerTests/repeat-until-1.luau",
 	}
 
 	for _, path in files do

@@ -1063,26 +1063,33 @@ struct AstSerialize : public Luau::AstVisitor
 
         serializeNodePreamble(node, "repeat");
 
-        node->condition->visit(this);
-        lua_setfield(L, -2, "condition");
+        serializeToken(node->location.begin, "repeat");
+        lua_setfield(L, -2, "repeat");
 
         node->body->visit(this);
         lua_setfield(L, -2, "body");
+
+        if (const auto cstNode = lookupCstNode<Luau::CstStatRepeat>(node))
+        {
+            serializeToken(cstNode->untilPosition, "until");
+            lua_setfield(L, -2, "until");
+        }
+
+        node->condition->visit(this);
+        lua_setfield(L, -2, "condition");
     }
 
     void serializeStat(Luau::AstStatBreak* node)
     {
         lua_rawcheckstack(L, 2);
-        lua_createtable(L, 0, preambleSize);
-
+        serializeToken(node->location.begin, "break", preambleSize);
         serializeNodePreamble(node, "break");
     }
 
     void serializeStat(Luau::AstStatContinue* node)
     {
         lua_rawcheckstack(L, 2);
-        lua_createtable(L, 0, preambleSize);
-
+        serializeToken(node->location.begin, "continue", preambleSize);
         serializeNodePreamble(node, "continue");
     }
 
