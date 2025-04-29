@@ -281,6 +281,15 @@ export type AstStatLocalFunction = {
 	body: AstFunctionBody,
 }
 
+export type AstStatTypeAlias = {
+	tag: "typealias",
+	["export"]: Token<"export">?,
+	typeToken: Token<"type">,
+	name: Token,
+	equals: Token<"=">,
+	type: AstType,
+}
+
 export type AstStat =
 	| AstStatBlock
 	| AstStatIf
@@ -297,5 +306,43 @@ export type AstStat =
 	| AstStatCompoundAssign
 	| AstStatFunction
 	| AstStatLocalFunction
+	| AstStatTypeAlias
+
+export type AstTypeReference = {
+	tag: "reference",
+	prefix: Token<string>?,
+	prefixPoint: Token<".">?,
+	name: Token<string>,
+	openParameters: Token<"<">?,
+	parameters: Punctuated<AstType>?,
+	closeParameters: Token<">">?,
+}
+
+export type AstTypeSingletonBool = Token<"true" | "false"> & {
+	tag: "boolean",
+	value: boolean,
+}
+
+export type AstTypeSingletonString = Token<string> & {
+	tag: "string",
+	quoteStyle: "single" | "double",
+}
+
+export type AstTypeTypeof = {
+	tag: "typeof",
+	typeof: Token<"typeof">,
+	openParens: Token<"(">,
+	expr: AstExpr,
+	closeParens: Token<")">,
+}
+
+export type AstTypeGroup = {
+	tag: "group",
+	openParens: Token<"(">,
+	type: AstType,
+	closeParens: Token<">">,
+}
+
+export type AstType = | AstTypeReference | AstTypeSingletonBool | AstTypeSingletonString | AstTypeTypeof | AstTypeGroup
 
 return {}
