@@ -237,7 +237,7 @@ static void processRequest(
     const std::string_view& body
 )
 {
-    lua_State* L = state->runtime->GL;
+    lua_State* L = lua_newthread(state->runtime->GL);
 
     lua_createtable(L, 0, 5);
 
@@ -266,7 +266,8 @@ static void processRequest(
     lua_pushvalue(L, -2);
     lua_remove(L, -3);
 
-    if (lua_pcall(L, 1, 1, 0) != 0)
+    int status = lua_resume(L, nullptr, 1);
+    if (status != LUA_OK && status != LUA_YIELD)
     {
         std::string error = lua_tostring(L, -1);
         lua_pop(L, 1);
