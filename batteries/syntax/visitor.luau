@@ -33,6 +33,7 @@ export type Visitor = {
 	visitGroup: (T.AstExprGroup) -> boolean,
 	visitInterpolatedString: (T.AstExprInterpString) -> boolean,
 	visitTypeAssertion: (T.AstExprTypeAssertion) -> boolean,
+	visitIfExpression: (T.AstExprIfElse) -> boolean,
 
 	visitTypeReference: (T.AstTypeReference) -> boolean,
 	visitTypeBoolean: (T.AstTypeSingletonBool) -> boolean,
@@ -84,6 +85,7 @@ local defaultVisitor: Visitor = {
 	visitGroup = alwaysVisit :: any,
 	visitInterpolatedString = alwaysVisit,
 	visitTypeAssertion = alwaysVisit,
+	visitIfExpression = alwaysVisit,
 
 	visitTypeReference = alwaysVisit :: any,
 	visitTypeBoolean = alwaysVisit :: any,
@@ -139,7 +141,12 @@ local function visitIf(node: T.AstStatIf, visitor: Visitor)
 		visitExpression(node.condition, visitor)
 		visitToken(node["then"], visitor)
 		visitBlock(node.consequent, visitor)
-		-- TODO: special handling for elseif?
+		for _, elseifNode in node.elseifs do
+			visitToken(elseifNode["elseif"], visitor)
+			visitExpression(elseifNode.condition, visitor)
+			visitToken(elseifNode["then"], visitor)
+			visitBlock(elseifNode.consequent, visitor)
+		end
 		if node["else"] then
 			visitToken(node["else"], visitor)
 		end
@@ -427,6 +434,23 @@ local function visitTypeAssertion(node: T.AstExprTypeAssertion, visitor: Visitor
 	end
 end
 
+local function visitIfExpression(node: T.AstExprIfElse, visitor: Visitor)
+	if visitor.visitIfExpression(node) then
+		visitToken(node["if"], visitor)
+		visitExpression(node.condition, visitor)
+		visitToken(node["then"], visitor)
+		visitExpression(node.consequent, visitor)
+		for _, elseifs in node["elseifs"] do
+			visitToken(elseifs["elseif"], visitor)
+			visitExpression(elseifs.condition, visitor)
+			visitToken(elseifs["then"], visitor)
+			visitExpression(elseifs.consequent, visitor)
+		end
+		visitToken(node["else"], visitor)
+		visitExpression(node.antecedent, visitor)
+	end
+end
+
 local function visitTypeReference(node: T.AstTypeReference, visitor: Visitor)
 	if visitor.visitTypeReference(node) then
 		if node.prefix then
@@ -513,6 +537,8 @@ function visitExpression(expression: T.AstExpr, visitor: Visitor)
 			visitInterpolatedString(expression, visitor)
 		elseif expression.tag == "cast" then
 			visitTypeAssertion(expression, visitor)
+		elseif expression.tag == "conditional" then
+			visitIfExpression(expression, visitor)
 		else
 			exhaustiveMatch(expression.tag)
 		end

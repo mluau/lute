@@ -168,6 +168,24 @@ export type AstExprTypeAssertion = {
 	annotation: AstType,
 }
 
+export type AstExprIfElseIfs = {
+	["elseif"]: Token<"elseif">,
+	condition: AstExpr,
+	["then"]: Token<"then">,
+	consequent: AstExpr,
+}
+
+export type AstExprIfElse = {
+	tag: "conditional",
+	["if"]: Token<"if">,
+	condition: AstExpr,
+	["then"]: Token<"then">,
+	consequent: AstExpr,
+	elseifs: { AstExprIfElseIfs },
+	["else"]: Token<"else">,
+	antecedent: AstExpr,
+}
+
 export type AstExpr =
 	| AstExprGroup
 	| AstExprConstantNil
@@ -186,10 +204,18 @@ export type AstExpr =
 	| AstExprBinary
 	| AstExprInterpString
 	| AstExprTypeAssertion
+	| AstExprIfElse
 
 export type AstStatBlock = {
 	tag: "block",
 	statements: { AstStat },
+}
+
+export type AstStatElseIf = {
+	["elseif"]: Token<"elseif">,
+	condition: AstExpr,
+	["then"]: Token<"then">,
+	consequent: AstStatBlock,
 }
 
 export type AstStatIf = {
@@ -198,6 +224,7 @@ export type AstStatIf = {
 	condition: AstExpr,
 	["then"]: Token<"then">,
 	consequent: AstStatBlock,
+	elseifs: { AstStatElseIf },
 	["else"]: Token<"else">, -- TODO: this could be elseif!
 	antecedent: AstStatBlock,
 	["end"]: Token<"end">,
