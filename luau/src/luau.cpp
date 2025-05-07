@@ -1506,6 +1506,35 @@ struct AstSerialize : public Luau::AstVisitor
         lua_setfield(L, -2, "type");
     }
 
+    void serializeStat(Luau::AstStatTypeFunction* node)
+    {
+        lua_rawcheckstack(L, 2);
+        lua_createtable(L, 0, preambleSize + 5);
+
+        const auto cstNode = lookupCstNode<Luau::CstStatTypeFunction>(node);
+        LUAU_ASSERT(cstNode); // TODO: handle non cst mode
+
+        serializeNodePreamble(node, "typefunction");
+
+        if (node->exported)
+            serializeToken(node->location.begin, "export");
+        else
+            lua_pushnil(L);
+        lua_setfield(L, -2, "export");
+
+        serializeToken(cstNode->typeKeywordPosition, "type");
+        lua_setfield(L, -2, "type");
+
+        serializeToken(cstNode->functionKeywordPosition, "function");
+        lua_setfield(L, -2, "function");
+
+        serializeToken(node->nameLocation.begin, node->name.value);
+        lua_setfield(L, -2, "name");
+
+        serializeFunctionBody(node->body);
+        lua_setfield(L, -2, "body");
+    }
+
     void serializeStat(Luau::AstStatDeclareFunction* node)
     {
         // TODO: declarations
@@ -1924,6 +1953,12 @@ struct AstSerialize : public Luau::AstVisitor
     }
 
     bool visit(Luau::AstStatTypeAlias* node) override
+    {
+        serializeStat(node);
+        return false;
+    }
+
+    bool visit(Luau::AstStatTypeFunction* node) override
     {
         serializeStat(node);
         return false;

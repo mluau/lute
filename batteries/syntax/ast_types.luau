@@ -334,6 +334,15 @@ export type AstStatTypeAlias = {
 	type: AstType,
 }
 
+export type AstStatTypeFunction = {
+	tag: "typefunction",
+	["export"]: Token<"export">?,
+	type: Token<"type">,
+	["function"]: Token<"function">,
+	name: Token,
+	body: AstFunctionBody,
+}
+
 export type AstStat =
 	| AstStatBlock
 	| AstStatIf
@@ -351,6 +360,7 @@ export type AstStat =
 	| AstStatFunction
 	| AstStatLocalFunction
 	| AstStatTypeAlias
+	| AstStatTypeFunction
 
 export type AstTypeReference = {
 	tag: "reference",
