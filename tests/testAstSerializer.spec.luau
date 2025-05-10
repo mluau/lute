@@ -164,6 +164,8 @@ local function test_roundtrippableAst()
 		"tests/astSerializerTests/type-assertion-1.luau",
 		"tests/astSerializerTests/type-function-1.luau",
 		"tests/astSerializerTests/type-singletons-1.luau",
+		"tests/astSerializerTests/type-tables-1.luau",
+		"tests/astSerializerTests/type-tables-2.luau",
 		"tests/astSerializerTests/while-1.luau",
 		"tests/astSerializerTests/repeat-until-1.luau",
 	}
