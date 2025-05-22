@@ -1,6 +1,10 @@
 #include "lute/system.h"
 #include "lua.h"
+#include "lualib.h"
 #include "uv.h"
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
 #include <iterator>
 #include <string>
 #include <vector>
@@ -66,6 +70,59 @@ int lua_threadcount(lua_State* L)
     return 1;
 }
 
+constexpr size_t BYTES_PER_MB = 1024 * 1024; // 2^20 bytes
+
+int lua_freememory(lua_State* L)
+{
+    lua_pushnumber(L, static_cast<double>(uv_get_free_memory()) / BYTES_PER_MB);
+
+    return 1;
+}
+
+int lua_totalmemory(lua_State* L)
+{
+    lua_pushnumber(L, static_cast<double>(uv_get_total_memory()) / BYTES_PER_MB);
+
+    return 1;
+}
+
+int lua_hostname(lua_State* L)
+{
+    size_t sz = 255;
+    std::string hostname;
+    hostname.reserve(sz);
+
+    int res = uv_os_gethostname(hostname.data(), &sz);
+    if (res == UV_ENOBUFS)
+    {
+        hostname.reserve(sz); // libuv updates the size to what's required
+        res = uv_os_gethostname(hostname.data(), &sz);
+    }
+
+    if (res != 0)
+    {
+        luaL_error(L, "libuv error: %s", uv_strerror(res));
+    }
+
+    lua_pushstring(L, hostname.c_str());
+
+    return 1;
+}
+
+int lua_uptime(lua_State* L)
+{
+    double uptime = 0;
+
+    int res = uv_uptime(&uptime);
+    if (res != 0)
+    {
+        luaL_error(L, "libuv error: %s", uv_strerror(res));
+    }
+
+    lua_pushnumber(L, uptime);
+
+    return 1;
+}
 } // namespace libsystem
 
 int luaopen_system(lua_State* L)
