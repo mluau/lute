@@ -5,8 +5,10 @@
 #include "Luau/Parser.h"
 #include "Luau/Require.h"
 
+#include "clicommands.h"
 #include "lua.h"
 #include "lualib.h"
+#include "lute/clivfs.h"
 #include "uv.h"
 
 #include "lute/crypto.h"
@@ -25,6 +27,7 @@
 
 #include "compile.h"
 #include "tc.h"
+#include <iostream>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -50,7 +53,7 @@ static void* createCliRequireContext(lua_State* L)
     if (!ctx)
         luaL_error(L, "unable to allocate RequireCtx");
 
-    ctx = new (ctx) RequireCtx{};
+    ctx = new (ctx) RequireCtx{CliVfs{}};
 
     // Store RequireCtx in the registry to keep it alive for the lifetime of
     // this lua_State. Memory address is used as a key to avoid collisions.
@@ -391,6 +394,15 @@ int handleCompileCommand(int argc, char** argv, int argOffset)
     return compileScript(inputFilePath, outputFilePath, argv[0]);
 }
 
+int handleCliCommand(CliCommandResult result)
+{
+    Runtime runtime;
+    lua_State* L = setupState(runtime);
+
+    std::string bytecode = Luau::compile(std::string(result.contents), copts());
+    return runBytecode(runtime, bytecode, "@" + result.path, L) ? 0 : 1;
+}
+
 int main(int argc, char** argv)
 {
     Luau::assertHandler() = assertionHandler;
@@ -439,6 +451,10 @@ int main(int argc, char** argv)
     {
         displayHelp(argv[0]);
         return 0;
+    }
+    else if (std::optional<CliCommandResult> result = getCliCommand(command); result)
+    {
+        return handleCliCommand(*result);
     }
     else
     {

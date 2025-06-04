@@ -1,4 +1,5 @@
 target_sources(Lute.Runtime PRIVATE
+    runtime/include/lute/clivfs.h
     runtime/include/lute/filevfs.h
     runtime/include/lute/modulepath.h
     runtime/include/lute/options.h
@@ -9,6 +10,7 @@ target_sources(Lute.Runtime PRIVATE
     runtime/include/lute/stdlibvfs.h
     runtime/include/lute/userdatas.h
 
+    runtime/src/clivfs.cpp
     runtime/src/filevfs.cpp
     runtime/src/modulepath.cpp
     runtime/src/options.cpp
@@ -70,6 +72,14 @@ target_sources(Lute.Process PRIVATE
     process/include/lute/process.h
 
     process/src/process.cpp
+)
+
+target_sources(Lute.CLI.Commands PRIVATE
+    cli/generated/commands.h
+    cli/generated/commands.cpp
+
+    cli/clicommands.h
+    cli/clicommands.cpp
 )
 
 target_sources(Lute.CLI PRIVATE
