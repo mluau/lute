@@ -1,3 +1,5 @@
+--!strict
+
 local crypto = require("@lute/crypto")
 local fs = require("@lute/fs")
 local process = require("@lute/process")
@@ -39,13 +41,13 @@ local isLinux = string.find(os, "linux") ~= nil
 
 local targetMap: { [string]: { exeName: string } } = {
 	lute = {
-		exeName = "lute",
+		exeName = "lute/cli/lute",
 	},
 	["Lute.CLI"] = {
-		exeName = "lute",
+		exeName = "lute/cli/lute",
 	},
 	["Lute.Test"] = {
-		exeName = "lute-tests",
+		exeName = "tests/lute-tests",
 	},
 }
 
@@ -220,7 +222,9 @@ local function traverseFileTree(path: string, callback: (string, string) -> ())
 end
 
 local function getStdLibHash(): string
-	local libsPath = projectRelative("std", "libs")
+	local libsPath = projectRelative("lute", "std", "libs")
+	local libs = fs.listdir(libsPath)
+
 	local toHash = ""
 
 	traverseFileTree(libsPath, function(path, relativePath)
@@ -235,7 +239,7 @@ local function getStdLibHash(): string
 end
 
 local function isGeneratedStdLibUpToDate(): boolean
-	local hashFile = projectRelative("std", "src", "generated", "hash.txt")
+	local hashFile = projectRelative("lute", "std", "src", "generated", "hash.txt")
 
 	if safeFsType(hashFile) ~= "file" then
 		return false
@@ -251,7 +255,7 @@ local function writeLines(file, lines: { string })
 end
 
 local function generateStdLibFilesIfNeeded()
-	local generatedPath = projectRelative("std", "src", "generated")
+	local generatedPath = projectRelative("lute", "std", "src", "generated")
 	pcall(fs.mkdir, generatedPath)
 
 	if isGeneratedStdLibUpToDate() then
@@ -271,7 +275,8 @@ local function generateStdLibFilesIfNeeded()
 		"constexpr std::pair<std::string_view, std::string_view> lutestdlib[] = {",
 	})
 
-	local libsPath = projectRelative("std", "libs")
+	local libsPath = projectRelative("lute", "std", "libs")
+	local libs = fs.listdir(libsPath)
 	local numItems = 0
 
 	traverseFileTree(libsPath, function(path, relativePath)
@@ -314,7 +319,7 @@ local function generateStdLibFilesIfNeeded()
 end
 
 local function getCliCommandsHash()
-	local libsPath = projectRelative("cli", "commands")
+	local libsPath = projectRelative("lute", "cli", "commands")
 	local toHash = ""
 
 	traverseFileTree(libsPath, function(path, relativePath)
@@ -329,7 +334,7 @@ local function getCliCommandsHash()
 end
 
 local function isGeneratedCliCommandsUpToDate()
-	local hashFile = projectRelative("cli", "generated", "hash.txt")
+	local hashFile = projectRelative("lute", "cli", "generated", "hash.txt")
 
 	if safeFsType(hashFile) ~= "file" then
 		return false
@@ -341,7 +346,7 @@ local function isGeneratedCliCommandsUpToDate()
 end
 
 local function generateCliCommandsFilesIfNeeded()
-	local generatedPath = projectRelative("cli", "generated")
+	local generatedPath = projectRelative("lute", "cli", "generated")
 	pcall(fs.mkdir, generatedPath)
 
 	if isGeneratedCliCommandsUpToDate() then
@@ -361,7 +366,7 @@ local function generateCliCommandsFilesIfNeeded()
 		"constexpr std::pair<std::string_view, std::string_view> luteclicommands[] = {",
 	})
 
-	local libsPath = projectRelative("cli", "commands")
+	local libsPath = projectRelative("lute", "cli", "commands")
 	local numItems = 0
 
 	traverseFileTree(libsPath, function(path, relativePath)
@@ -492,9 +497,7 @@ local function fetchDependency(dependencyInfo: Tune)
 
 	if safeFsType(dependencyPath) == "dir" then
 		check(call({ "git", "fetch", "--depth=1", "origin", dependency.revision }, dependencyPath))
-		local result = call({ "git", "checkout", dependency.revision }, dependencyPath)
-		check(call({ "git", "submodule", "update", "--init", "--recursive", "--depth=1" }, dependencyPath))
-		return result
+		return call({ "git", "checkout", dependency.revision }, dependencyPath)
 	end
 
 	if gitVersionInfo.major >= 3 or (gitVersionInfo.major == 2 and gitVersionInfo.minor >= 49) then
@@ -502,7 +505,6 @@ local function fetchDependency(dependencyInfo: Tune)
 			"git",
 			"clone",
 			"--depth=1",
-			"--recurse-submodules",
 			"--revision",
 			dependency.revision,
 			dependency.remote,
@@ -513,7 +515,6 @@ local function fetchDependency(dependencyInfo: Tune)
 			"git",
 			"clone",
 			"--depth=1",
-			"--recurse-submodules",
 			"--branch",
 			dependency.branch,
 			dependency.remote,

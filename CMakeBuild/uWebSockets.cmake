@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 project(uWebSockets LANGUAGES C CXX)
 
-
 set(UWEBSOCKETS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/uWebSockets)
 
 # Include directories
@@ -41,19 +40,8 @@ if(WITH_LIBDEFLATE)
 endif()
 
 if(WITH_ZLIB)
-    if(MSVC)
-        # On Windows, try to find zlib using find_package
-        find_package(ZLIB REQUIRED)
-        if(ZLIB_FOUND)
-            target_include_directories(uWS INTERFACE ${ZLIB_INCLUDE_DIRS})
-            target_link_libraries(uWS INTERFACE ${ZLIB_LIBRARIES})
-        else()
-            message(FATAL_ERROR "ZLIB not found but WITH_ZLIB is ON")
-        endif()
-    else()
-        # On Unix systems, just link to 'z'
-        target_link_libraries(uWS INTERFACE z)
-    endif()
+    target_include_directories(uWS INTERFACE ${ZLIB_INCLUDE_DIRS})
+    target_link_libraries(uWS INTERFACE ${ZLIB_LIBRARIES})
 else()
     target_compile_definitions(uWS INTERFACE UWS_NO_ZLIB)
 endif()

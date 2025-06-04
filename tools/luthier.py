@@ -32,13 +32,13 @@ isUnix = not isWindows
 
 targetMap = {
     'lute': {
-        'exeName': 'lute',
+        'exeName': 'lute/cli/lute',
     },
     'Lute.CLI': {
-        'exeName': 'lute',
+        'exeName': 'lute/cli/lute',
     },
     'Lute.Test': {
-        'exeName': 'lute-tests',
+        'exeName': 'tests/lute-tests',
     },
 }
 
@@ -141,6 +141,7 @@ def winpath(path):
 
 def getExeName(target):
     baseName = targetMap[target].get('exeName', target)
+    assert(baseName)
     ext = '.exe' if isWindows else ''
     return baseName + ext
 
@@ -170,7 +171,7 @@ def projectPathExists(args):
 
 def getStdLibHash():
     restoredPath = os.getcwd()
-    os.chdir(os.path.join(getSourceRoot(), 'std/libs'))
+    os.chdir(os.path.join(getSourceRoot(), 'lute/std/libs'))
 
     hasher = blake2b()
     for dirpath, _, filenames in os.walk('.'):
@@ -185,7 +186,7 @@ def getStdLibHash():
     return hasher.hexdigest()
 
 def isGeneratedStdLibUpToDate():
-    hashFile = os.path.join(getSourceRoot(), 'std/src/generated/hash.txt')
+    hashFile = os.path.join(getSourceRoot(), 'lute/std/src/generated/hash.txt')
 
     if not os.path.isfile(hashFile):
         return False
@@ -202,7 +203,7 @@ def isGeneratedStdLibUpToDate():
 def generateStdLibFilesIfNeeded():
     restoredPath = os.getcwd()
 
-    os.chdir(os.path.join(getSourceRoot(), 'std'))
+    os.chdir(os.path.join(getSourceRoot(), 'lute/std'))
     os.makedirs("src/generated", exist_ok=True)
 
     if (isGeneratedStdLibUpToDate()):
@@ -270,7 +271,7 @@ def generateStdLibFilesIfNeeded():
 
 def getCliCommandsHash():
     restoredPath = os.getcwd()
-    os.chdir(os.path.join(getSourceRoot(), 'cli/commands'))
+    os.chdir(os.path.join(getSourceRoot(), 'lute/cli/commands'))
 
     hasher = blake2b()
     for dirpath, _, filenames in os.walk('.'):
@@ -285,7 +286,7 @@ def getCliCommandsHash():
     return hasher.hexdigest()
 
 def isGeneratedCliCommandsUpToDate():
-    hashFile = os.path.join(getSourceRoot(), 'cli/generated/hash.txt')
+    hashFile = os.path.join(getSourceRoot(), 'lute/cli/generated/hash.txt')
 
     if not os.path.isfile(hashFile):
         return False
@@ -302,7 +303,7 @@ def isGeneratedCliCommandsUpToDate():
 def generateCliCommandsFilesIfNeeded():
     restoredPath = os.getcwd()
 
-    os.chdir(os.path.join(getSourceRoot(), 'cli'))
+    os.chdir(os.path.join(getSourceRoot(), 'lute/cli'))
     os.makedirs("generated", exist_ok=True)
 
     if (isGeneratedCliCommandsUpToDate()):
@@ -483,16 +484,15 @@ def fetchDependency(dependencyInfo):
         os.chdir(os.path.join('extern', dependency['name']))
         check(call(['git', 'fetch', '--depth=1', 'origin', dependency['revision']]))
         result = call(['git', 'checkout', dependency['revision']])
-        check(call(['git', 'submodule', 'update', '--init', '--recursive', '--depth=1']))
         os.chdir(getSourceRoot())
         return result
 
     if (gitVersionInfo['major'], gitVersionInfo['minor']) >= (2, 49):
         # if it doesn't exist, we'll do a shallow clone
-        return call(['git', 'clone', '--depth=1', '--recurse-submodules', '--revision', dependency['revision'], dependency['remote'], "extern/" + dependency['name']])
+        return call(['git', 'clone', '--depth=1', '--revision', dependency['revision'], dependency['remote'], "extern/" + dependency['name']])
     else:
         # if it doesn't exist, we'll do a shallow clone
-        return call(['git', 'clone', '--depth=1', '--recurse-submodules', '--branch', dependency['branch'], dependency['remote'], "extern/" + dependency['name']])
+        return call(['git', 'clone', '--depth=1', '--branch', dependency['branch'], dependency['remote'], "extern/" + dependency['name']])
 
 def fetchDependencies(args):
     for _, _, files in os.walk('extern'):
