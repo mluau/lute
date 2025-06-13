@@ -35,7 +35,7 @@ void* createCliRequireContext(lua_State* L)
     void* ctx = lua_newuserdatadtor(
         L,
         sizeof(RequireCtx),
-        [](void* ptr)
+        [](lua_State*, void* ptr)
         {
             static_cast<RequireCtx*>(ptr)->~RequireCtx();
         }
