@@ -30,6 +30,38 @@
 static int program_argc = 0;
 static char** program_argv = nullptr;
 
+lua_State* setupState(Runtime& runtime, void (*doBeforeSandbox)(lua_State*))
+{
+    // Separate VM for data copies
+    runtime.dataCopy.reset(luaL_newstate());
+
+    runtime.globalState.reset(luaL_newstate());
+
+    lua_State* L = runtime.globalState.get();
+
+    runtime.GL = L;
+
+    lua_setthreaddata(L, &runtime);
+
+    // register the builtin tables
+    luaL_openlibs(L);
+
+    luteopen_libs(L);
+
+    lua_pushnil(L);
+    lua_setglobal(L, "setfenv");
+
+    lua_pushnil(L);
+    lua_setglobal(L, "getfenv");
+
+    if (doBeforeSandbox)
+        doBeforeSandbox(L);
+
+    luaL_sandbox(L);
+
+    return L;
+}
+
 void* createCliRequireContext(lua_State* L)
 {
     void* ctx = lua_newuserdatadtor(
