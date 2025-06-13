@@ -730,6 +730,8 @@ elseif subcommand == "generate" then -- TODO cutesy name for generate
 elseif subcommand == "configure" or subcommand == "tune" then
 	generateFilesIfNeeded()
 	exitCode = configure()
+elseif subcommand == "generate" then
+	exitCode = generateFilesIfNeeded()
 elseif subcommand == "build" or subcommand == "craft" then
 	generateFilesIfNeeded()
 
