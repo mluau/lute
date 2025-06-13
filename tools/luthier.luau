@@ -731,7 +731,8 @@ elseif subcommand == "configure" or subcommand == "tune" then
 	generateFilesIfNeeded()
 	exitCode = configure()
 elseif subcommand == "generate" then
-	exitCode = generateFilesIfNeeded()
+	generateFilesIfNeeded()
+	exitCode = 0
 elseif subcommand == "build" or subcommand == "craft" then
 	generateFilesIfNeeded()
 
