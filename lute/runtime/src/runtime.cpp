@@ -1,9 +1,13 @@
 #include "lute/runtime.h"
 
+#ifndef LUTE_DISABLE_CRYPTO
 #include "lute/crypto.h"
+#endif
 #include "lute/fs.h"
 #include "lute/luau.h"
+#ifndef LUTE_DISABLE_NET
 #include "lute/net.h"
+#endif
 #include "lute/process.h"
 #include "lute/system.h"
 #include "lute/task.h"
@@ -310,10 +314,14 @@ ResumeToken getResumeToken(lua_State* L)
 void luteopen_libs(lua_State* L)
 {
     std::vector<std::pair<const char*, lua_CFunction>> libs = {{
-        {"@lute/crypto", luteopen_crypto},
-        {"@lute/fs", luteopen_fs},
+	#ifndef LUTE_DISABLE_CRYPTO
+    	{"@lute/crypto", luteopen_crypto},
+	#endif
+	{"@lute/fs", luteopen_fs},
         {"@lute/luau", luteopen_luau},
-        {"@lute/net", luteopen_net},
+	#ifndef LUTE_DISABLE_NET
+	{"@lute/net", luteopen_net},
+	#endif
         {"@lute/process", luteopen_process},
         {"@lute/task", luteopen_task},
         {"@lute/vm", luteopen_vm},
