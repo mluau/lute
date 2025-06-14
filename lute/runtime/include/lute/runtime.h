@@ -81,7 +81,6 @@ struct Runtime
 
     std::vector<ThreadToContinue> runningThreads;
 
-private:
     std::mutex continuationMutex;
     std::vector<std::function<void()>> continuations;
 
@@ -113,3 +112,4 @@ struct ResumeTokenData
 ResumeToken getResumeToken(lua_State* L);
 
 lua_State* setupState(Runtime& runtime, void (*doBeforeSandbox)(lua_State*));
+void luteopen_libs(lua_State* L);

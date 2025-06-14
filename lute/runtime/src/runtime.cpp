@@ -307,7 +307,7 @@ ResumeToken getResumeToken(lua_State* L)
     return token;
 }
 
-[[maybe_unused]] static void luteopen_libs(lua_State* L)
+void luteopen_libs(lua_State* L)
 {
     std::vector<std::pair<const char*, lua_CFunction>> libs = {{
         {"@lute/crypto", luteopen_crypto},

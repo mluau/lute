@@ -27,8 +27,6 @@ set(LIBUV_BUILD_SHARED OFF)
 set(BUILD_SHARED_LIBS OFF) # why does an option for LIBUV_BUILD_SHARED exist separately
 set(LIBUV_BUILD_TESTS OFF)
 set(LIBUV_BUILD_BENCH OFF)
-set(LUAU_EXTERN_C ON)
-set(LUAU_STATIC_CRT ON)
 add_subdirectory(extern/libuv)
 
 # Define libuv include directory here, before it's needed by other subdirectories
