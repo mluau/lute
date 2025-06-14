@@ -32,67 +32,75 @@ add_subdirectory(extern/libuv)
 # Define libuv include directory here, before it's needed by other subdirectories
 set(LIBUV_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/extern/libuv/include)
 
-# zlib setup
-#
-set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "Do not build examples" FORCE)
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build static zlib" FORCE)
-add_subdirectory(extern/zlib)
+if(NOT LUTE_DISABLE_NET)
+	# zlib setup
+	#
+	set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "Do not build examples" FORCE)
+	set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build static zlib" FORCE)
+	add_subdirectory(extern/zlib)
 
-set(ZLIB_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/extern/zlib")
+	set(ZLIB_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/extern/zlib")
 
-set(ZLIB_FOUND TRUE CACHE BOOL "" FORCE)
+	set(ZLIB_FOUND TRUE CACHE BOOL "" FORCE)
 
-if(MSVC)
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        set(ZLIB_LIBRARY "${ZLIB_OUTPUT_DIR}/zlibstaticd.lib")
-    else()
-        set(ZLIB_LIBRARY "${ZLIB_OUTPUT_DIR}/zlibstatic.lib")
-    endif()
-else()
-    set(ZLIB_LIBRARY "${ZLIB_OUTPUT_DIR}/libz.a")
+	if(MSVC)
+    		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        		set(ZLIB_LIBRARY "${ZLIB_OUTPUT_DIR}/zlibstaticd.lib")
+    		else()
+        		set(ZLIB_LIBRARY "${ZLIB_OUTPUT_DIR}/zlibstatic.lib")
+    		endif()
+	else()
+    		set(ZLIB_LIBRARY "${ZLIB_OUTPUT_DIR}/libz.a")
+	endif()
+	set(ZLIB_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/extern/zlib;${ZLIB_OUTPUT_DIR})
+	set(ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIR} CACHE STRING "" FORCE)
 endif()
-set(ZLIB_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/extern/zlib;${ZLIB_OUTPUT_DIR})
-set(ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDE_DIR} CACHE STRING "" FORCE)
 
-# boringssl setup
-add_subdirectory(extern/boringssl)
-set(BORINGSSL_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/extern/boringssl")
-set(BORINGSSL_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/extern/boringssl/include)
+if(NOT LUTE_DISABLE_CRYPTO AND NOT LUTE_DISABLE_NET)
+	# boringssl setup
+	add_subdirectory(extern/boringssl)
+	set(BORINGSSL_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/extern/boringssl")
+	set(BORINGSSL_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/extern/boringssl/include)
+endif()
 
-# curl setup
-
-set(USE_LIBIDN2 OFF)
-set(USE_NGHTTP2 OFF)
-set(CURL_USE_LIBPSL OFF)
-set(CURL_USE_LIBSSH2 OFF)
-set(CURL_ZLIB ON)
-set(CURL_BROTLI OFF CACHE STRING "Disable brotli support" FORCE)
-set(CURL_ENABLE_SSL ON)
-set(CURL_USE_OPENSSL ON)
-set(BUILD_EXAMPLES OFF)
-set(BUILD_CURL_EXE OFF)
 set(BUILD_SHARED_LIBS OFF)
 set(BUILD_STATIC_LIBS ON)
 
-set(HAVE_BORINGSSL ON)
-add_subdirectory(extern/curl)
+if(NOT LUTE_DISABLE_NET)
+	# curl setup
 
-# uWebSockets setup
-set(WITH_BORINGSSL ON)
-set(WITH_LIBUV ON)
-set(WITH_ZLIB ON)
+	set(USE_LIBIDN2 OFF)
+	set(USE_NGHTTP2 OFF)
+	set(CURL_USE_LIBPSL OFF)
+	set(CURL_USE_LIBSSH2 OFF)
+	set(CURL_ZLIB ON)
+	set(CURL_BROTLI OFF CACHE STRING "Disable brotli support" FORCE)
+	set(CURL_ENABLE_SSL ON)
+	set(CURL_USE_OPENSSL ON)
+	set(BUILD_EXAMPLES OFF)
+	set(BUILD_CURL_EXE OFF)
 
-# Set the correct libuv library name for uWebSockets
-set(LIBUV_LIBRARY uv_a)
-include(uSockets)
-include(uWebSockets)
+	set(HAVE_BORINGSSL ON)
+	add_subdirectory(extern/curl)
 
-# Define include directories for uWebSockets and uSockets
-set(UWEBSOCKETS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/extern/uWebSockets/src)
+	# uWebSockets setup
+	set(WITH_BORINGSSL ON)
+	set(WITH_LIBUV ON)
+	set(WITH_ZLIB ON)
 
+	# Set the correct libuv library name for uWebSockets
+	set(LIBUV_LIBRARY uv_a)
+	include(uSockets)
+	include(uWebSockets)
+
+	# Define include directories for uWebSockets and uSockets
+	set(UWEBSOCKETS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/extern/uWebSockets/src)
+endif()
 
 # libsodium for `pwhash`
-include(libsodium)
+if(NOT LUTE_DISABLE_CRYPTO)
+	include(libsodium)
+endif()
 
 # Lute
 set(LUTE_OPTIONS)
@@ -111,13 +119,26 @@ else()
     list(APPEND LUTE_OPTIONS -Werror) # Warnings are errors
 endif()
 
+if(LUTE_DISABLE_CRYPTO)
+    list(APPEND LUTE_OPTIONS -DLUTE_DISABLE_CRYPTO)
+endif()
+
+if(LUTE_DISABLE_NET)
+    list(APPEND LUTE_OPTIONS -DLUTE_DISABLE_NET)
+endif()
+
 # libraries
 add_subdirectory(lute/require)
 add_subdirectory(lute/runtime)
-add_subdirectory(lute/crypto)
+if(NOT LUTE_DISABLE_CRYPTO)
+	add_subdirectory(lute/crypto)
+endif()
 add_subdirectory(lute/fs)
 add_subdirectory(lute/luau)
-add_subdirectory(lute/net)
+
+if(NOT LUTE_DISABLE_NET)
+	add_subdirectory(lute/net)
+endif()
 add_subdirectory(lute/std)
 add_subdirectory(lute/task)
 add_subdirectory(lute/vm)
@@ -127,4 +148,3 @@ add_subdirectory(lute/time)
 
 # executables
 add_subdirectory(lute/cli)
-add_subdirectory(tests)

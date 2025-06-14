@@ -11,5 +11,15 @@ target_sources(Lute.Runtime PRIVATE
 
 target_compile_features(Lute.Runtime PUBLIC cxx_std_17)
 target_include_directories(Lute.Runtime PUBLIC "include" ${LIBUV_INCLUDE_DIR})
-target_link_libraries(Lute.Runtime PRIVATE Lute.Crypto Lute.Fs Lute.Luau Lute.Net Lute.Task Lute.VM Lute.Process Lute.System Lute.Time Luau.Common Luau.Require Luau.VM uv_a)
+
+target_link_libraries(Lute.Runtime PRIVATE Lute.Fs Lute.Luau Lute.Task Lute.VM Lute.Process Lute.System Lute.Time Luau.Common Luau.Require Luau.VM uv_a)
+
+if(NOT LUTE_DISABLE_NET)
+	target_link_libraries(Lute.Runtime PRIVATE Lute.Net)
+endif()
+
+if(NOT LUTE_DISABLE_CRYPTO)
+	target_link_libraries(Lute.Runtime PRIVATE Lute.Crypto)
+endif()
+
 target_compile_options(Lute.Runtime PRIVATE ${LUTE_OPTIONS})
