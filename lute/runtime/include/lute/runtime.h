@@ -22,6 +22,11 @@ struct ThreadToContinue
     std::function<void()> cont;
 };
 
+struct ErrorThread
+{
+    std::shared_ptr<Ref> ref;
+};
+
 struct StepErr
 {
     lua_State* L;
@@ -90,6 +95,9 @@ struct Runtime
     std::thread runLoopThread;
 
     std::atomic<int> activeTokens;
+
+    // Needed for mluau to get errors right
+    std::vector<ErrorThread> errorStack;
 };
 
 Runtime* getRuntime(lua_State* L);
