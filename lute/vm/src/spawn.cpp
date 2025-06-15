@@ -292,8 +292,6 @@ int lua_spawn(lua_State* L)
 
     lua_pop(child->GL, 1);
 
-    child->runContinuously();
-
     return 1;
 }
 
