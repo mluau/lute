@@ -61,6 +61,18 @@ RuntimeStep Runtime::runOnce()
 {
     uv_run(uv_default_loop(), UV_RUN_DEFAULT);
 
+    // mluau patch: Push errorStack over via StepErr
+    if (!errorStack.empty())
+    {
+        auto error = std::move(errorStack.front());
+        errorStack.erase(errorStack.begin());
+
+        error.ref->push(GL);
+        lua_State* L = lua_tothread(GL, -1);
+
+        return StepErr{L};
+    }
+
     // Complete all C++ continuations
     std::vector<std::function<void()>> copy;
 
@@ -145,15 +157,11 @@ bool Runtime::runToCompletion()
 
 void Runtime::reportError(lua_State* L)
 {
-    std::string error;
+    // mluau patch: Push errorStack over via StepErr
+    errorStack.push_back({.ref = getRefForThread(L)});
 
-    if (const char* str = lua_tostring(L, -1))
-        error = str;
-
-    error += "\nstacktrace:\n";
-    error += lua_debugtrace(L);
-
-    fprintf(stderr, "%s", error.c_str());
+    // Notify the run loop that we have an error to process
+    runLoopCv.notify_one();
 }
 
 void Runtime::runContinuously()
