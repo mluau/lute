@@ -30,7 +30,7 @@
 static int program_argc = 0;
 static char** program_argv = nullptr;
 
-lua_State* setupState(Runtime& runtime, void (*doBeforeSandbox)(lua_State*))
+lua_State* setupState(lua_State* parent, Runtime& runtime, void (*doBeforeSandbox)(lua_State*))
 {
     // Separate VM for data copies
     runtime.dataCopy.reset(luaL_newstate());
@@ -90,6 +90,7 @@ void* createCliRequireContext(lua_State* L)
 lua_State* setupCliState(Runtime& runtime)
 {
     return setupState(
+        nullptr,
         runtime,
         [](lua_State* L)
         {

@@ -202,13 +202,17 @@ int lua_spawn(lua_State* L)
 
     auto child = std::make_shared<Runtime>();
 
-    setupState(
+    auto result = setupState(
+        L,
         *child,
         [](lua_State* L)
         {
             luaopen_require(L, requireConfigInit, createChildVmRequireContext(L));
         }
     );
+
+    if (!result)
+        luaL_error(L, "Failed to setup child VM");
 
     lua_Debug ar;
     lua_getinfo(L, 1, "s", &ar);

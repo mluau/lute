@@ -314,14 +314,14 @@ ResumeToken getResumeToken(lua_State* L)
 void luteopen_libs(lua_State* L)
 {
     std::vector<std::pair<const char*, lua_CFunction>> libs = {{
-	#ifndef LUTE_DISABLE_CRYPTO
-    	{"@lute/crypto", luteopen_crypto},
-	#endif
-	{"@lute/fs", luteopen_fs},
+#ifndef LUTE_DISABLE_CRYPTO
+        {"@lute/crypto", luteopen_crypto},
+#endif
+        {"@lute/fs", luteopen_fs},
         {"@lute/luau", luteopen_luau},
-	#ifndef LUTE_DISABLE_NET
-	{"@lute/net", luteopen_net},
-	#endif
+#ifndef LUTE_DISABLE_NET
+        {"@lute/net", luteopen_net},
+#endif
         {"@lute/process", luteopen_process},
         {"@lute/task", luteopen_task},
         {"@lute/vm", luteopen_vm},
@@ -338,4 +338,4 @@ void luteopen_libs(lua_State* L)
     }
 }
 
-lua_State* setupState(Runtime& runtime, void (*doBeforeSandbox)(lua_State*));
+lua_State* setupState(lua_State* parent, Runtime& runtime, void (*doBeforeSandbox)(lua_State*));
