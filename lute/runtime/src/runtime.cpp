@@ -158,6 +158,7 @@ bool Runtime::runToCompletion()
 void Runtime::reportError(lua_State* L)
 {
     // mluau patch: Push errorStack over via StepErr
+    printf("reportError called\n");
     errorStack.push_back({.ref = getRefForThread(L)});
 
     // Notify the run loop that we have an error to process
