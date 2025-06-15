@@ -111,5 +111,5 @@ struct ResumeTokenData
 
 ResumeToken getResumeToken(lua_State* L);
 
-lua_State* setupState(Runtime& runtime, void (*doBeforeSandbox)(lua_State*));
+lua_State* setupState(lua_State* parent, Runtime& runtime, void (*doBeforeSandbox)(lua_State*));
 void luteopen_libs(lua_State* L);
