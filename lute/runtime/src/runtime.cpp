@@ -159,7 +159,7 @@ void Runtime::reportError(lua_State* L)
 {
     // mluau patch: Push errorStack over via StepErr
     printf("reportError called\n");
-    errorStack.push_back({.ref = getRefForThread(L)});
+    errorStack.push_back({getRefForThread(L)});
 
     // Notify the run loop that we have an error to process
     runLoopCv.notify_one();
