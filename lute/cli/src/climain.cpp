@@ -1,5 +1,7 @@
 #include "Luau/Common.h"
+#ifndef LUTE_DISABLE_NATIVE_CODEGEN
 #include "Luau/CodeGen.h"
+#endif
 #include "Luau/Compiler.h"
 #include "Luau/FileUtils.h"
 #include "Luau/Parser.h"
@@ -94,9 +96,10 @@ lua_State* setupCliState(Runtime& runtime)
         runtime,
         [](lua_State* L)
         {
+            #ifndef LUTE_DISABLE_NATIVE_CODEGEN
             if (Luau::CodeGen::isSupported())
                 Luau::CodeGen::create(L);
-
+            #endif
             luaopen_require(L, requireConfigInit, createCliRequireContext(L));
         }
     );
@@ -132,11 +135,13 @@ static bool runBytecode(Runtime& runtime, const std::string& bytecode, const std
         return false;
     }
 
+    #ifndef LUTE_DISABLE_NATIVE_CODEGEN
     if (getCodegenEnabled())
     {
         Luau::CodeGen::CompilationOptions nativeOptions;
         Luau::CodeGen::compile(L, -1, nativeOptions);
     }
+    #endif
 
     if (!setupArguments(L, program_argc, program_argv))
     {
