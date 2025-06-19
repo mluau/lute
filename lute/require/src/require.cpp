@@ -128,11 +128,13 @@ static int load(lua_State* L, void* ctx, const char* path, const char* chunkname
     std::string bytecode = Luau::compile(*contents, copts());
     if (luau_load(ML, chunkname, bytecode.data(), bytecode.size(), 0) == 0)
     {
+        #ifndef LUTE_DISABLE_NATIVE_CODEGEN
         if (getCodegenEnabled())
         {
             Luau::CodeGen::CompilationOptions nativeOptions;
             Luau::CodeGen::compile(ML, -1, nativeOptions);
         }
+        #endif
 
         int status = lua_resume(ML, L, 0);
 

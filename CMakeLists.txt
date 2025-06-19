@@ -126,6 +126,10 @@ if(LUTE_DISABLE_NET)
     list(APPEND LUTE_OPTIONS -DLUTE_DISABLE_NET)
 endif()
 
+if(LUTE_DISABLE_NATIVE_CODEGEN)
+	list(APPEND LUTE_OPTIONS -DLUTE_DISABLE_NATIVE_CODEGEN)
+endif()
+
 # libraries
 add_subdirectory(lute/require)
 add_subdirectory(lute/runtime)
