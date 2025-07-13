@@ -43,6 +43,9 @@ int fs_mkdir(lua_State* L);
 /* Removes a directory */
 int fs_rmdir(lua_State* L);
 
+/* Gets the metadata of a file */
+int fs_stat(lua_State* L);
+
 /* Checks if a file exists */
 int fs_exists(lua_State* L);
 
@@ -73,6 +76,7 @@ static const luaL_Reg lib[] = {
 
     {"remove", fs_remove},
 
+    {"stat", fs_stat},
     {"exists", fs_exists},
     {"type", type},
 
