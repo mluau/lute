@@ -5,6 +5,7 @@
 #include "uv.h"
 
 #include "lute/runtime.h"
+#include "lute/time.h"
 #include "lute/userdatas.h"
 
 #include <cstdio>
@@ -41,7 +42,6 @@
 #if !defined(S_ISFIFO) && defined(S_IFMT) && defined(S_IFIFO)
 #define S_ISFIFO(m) (((m) & S_IFMT) == S_IFIFO)
 #endif
-
 
 namespace fs
 {
@@ -106,6 +106,54 @@ std::optional<int> setFlags(const char* c, int* openFlags)
     }
 
     return modeFlags;
+}
+
+static int createDurationFromTimespec32(lua_State* L, uv_timespec_t timespec)
+{
+    uv_timespec64_t extended{static_cast<int64_t>(timespec.tv_sec), static_cast<int32_t>(timespec.tv_nsec)};
+    return createDurationFromTimespec(L, extended);
+}
+
+static const char* fileModeToType(uint64_t mode)
+{
+    if (S_ISDIR(mode))
+    {
+        return UV_TYPENAME_DIR;
+    }
+    else if (S_ISREG(mode))
+    {
+        return UV_TYPENAME_FILE;
+    }
+    else if (S_ISCHR(mode))
+    {
+        return UV_TYPENAME_CHAR;
+    }
+    else if (S_ISLNK(mode))
+    {
+        return UV_TYPENAME_LINK;
+    }
+#ifdef S_ISBLK
+    else if (S_ISBLK(mode))
+    {
+        return UV_TYPENAME_BLOCK;
+    }
+#endif
+#ifdef S_ISFIFO
+    else if (S_ISFIFO(mode))
+    {
+        return UV_TYPENAME_FIFO;
+    }
+#endif
+#ifdef S_ISSOCK
+    else if (S_ISSOCK(mode))
+    {
+        return UV_TYPENAME_SOCKET;
+    }
+#endif
+    else
+    {
+        return UV_TYPENAME_UNKNOWN;
+    }
 }
 
 struct FileHandle
@@ -332,6 +380,50 @@ int fs_rmdir(lua_State* L)
         luaL_errorL(L, "%s", uv_strerror(err));
 
     return 0;
+}
+
+int fs_stat(lua_State* L)
+{
+    const char* path = luaL_checkstring(L, 1);
+
+    uv_fs_t stat_req;
+    int err = uv_fs_stat(uv_default_loop(), &stat_req, path, nullptr);
+
+    if (err)
+        luaL_errorL(L, "%s", uv_strerror(err));
+
+    lua_createtable(L, 0, 6);
+
+    auto stat = stat_req.statbuf;
+
+    auto type = fileModeToType(stat.st_mode);
+    lua_pushstring(L, type);
+    lua_setfield(L, -2, "type");
+
+    // this is fine unless the file is 9 petabytes
+    lua_pushnumber(L, static_cast<double>(stat.st_size));
+    lua_setfield(L, -2, "size");
+
+    createDurationFromTimespec32(L, stat.st_birthtim);
+    lua_setfield(L, -2, "created_at");
+
+    createDurationFromTimespec32(L, stat.st_atim);
+    lua_setfield(L, -2, "accessed_at");
+
+    createDurationFromTimespec32(L, stat.st_mtim);
+    lua_setfield(L, -2, "modified_at");
+
+    // permissions
+    lua_createtable(L, 0, 2);
+
+    // libuv writes this correctly cross-platform
+    bool canAnyWrite = stat.st_mode & 0222;
+    lua_pushboolean(L, !canAnyWrite);
+    lua_setfield(L, -2, "readonly");
+
+    lua_setfield(L, -2, "permissions");
+
+    return 1;
 }
 
 static void defaultCallback(uv_fs_t* req)
@@ -615,46 +707,8 @@ int type(lua_State* L)
     if (err)
         luaL_errorL(L, "%s", uv_strerror(err));
 
-    if (S_ISDIR(req.statbuf.st_mode))
-    {
-        lua_pushstring(L, UV_TYPENAME_DIR);
-    }
-    else if (S_ISREG(req.statbuf.st_mode))
-    {
-        lua_pushstring(L, UV_TYPENAME_FILE);
-    }
-    else if (S_ISCHR(req.statbuf.st_mode))
-    {
-        lua_pushstring(L, UV_TYPENAME_CHAR);
-    }
-    else if (S_ISLNK(req.statbuf.st_mode))
-    {
-        lua_pushstring(L, UV_TYPENAME_LINK);
-    }
-#ifdef S_ISBLK
-    else if (S_ISBLK(req.statbuf.st_mode))
-    {
-        lua_pushstring(L, UV_TYPENAME_BLOCK);
-    }
-#endif
-#ifdef S_ISFIFO
-    else if (S_ISFIFO(req.statbuf.st_mode))
-    {
-        lua_pushstring(L, UV_TYPENAME_FIFO);
-    }
-#endif
-#ifdef S_ISSOCK
-    else if (S_ISSOCK(req.statbuf.st_mode))
-    {
-        lua_pushstring(L, UV_TYPENAME_SOCKET);
-    }
-#endif
-    else
-    {
-        lua_pushstring(L, UV_TYPENAME_UNKNOWN);
-    }
-
-
+    auto type = fileModeToType(req.statbuf.st_mode);
+    lua_pushstring(L, type);
     uv_fs_req_cleanup(&req);
 
     return 1;

@@ -20,3 +20,4 @@ extern/libuv/DartConfiguration.tcl
 extern/*/
 generated
 .done_luthier
+**/generated-types.luau
