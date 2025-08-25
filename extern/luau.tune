@@ -2,4 +2,4 @@
 name = "luau"
 remote = "https://github.com/mlua-rs/luau.git"
 branch = "master"
-revision = "fb1a30e6c16733845bf50ea97ecd351afa8eda96"
+revision = "b140a9ed654bd02d334b63c7541ff51d29861a4d"
